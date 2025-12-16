@@ -28,17 +28,21 @@ public class PlantUmlController {
         String uml;
 
         switch (modelChoice.toLowerCase()) {
-            case "gemini":
-                uml = plantUmlService.generateUmlWithGemini(text);
-                break;
-            case "llama":
-                uml = plantUmlService.generateUmlWithLlama(text);
-                break;
-            case "mistral":
-            default:
-                uml = plantUmlService.generateUmlFromText(text);
-                break;
-        }
+    case "chatgpt":
+        uml = plantUmlService.generateUmlWithChatGpt(text);
+        break;
+    case "gemini":
+        uml = plantUmlService.generateUmlWithGemini(text);
+        break;
+    case "llama":
+        uml = plantUmlService.generateUmlWithLlama(text);
+        break;
+    case "mistral":
+    default:
+        uml = plantUmlService.generateUmlFromText(text);
+        break;
+}
+
 
         // Izdvoji @startuml do @enduml
         int start = uml.indexOf("@startuml");

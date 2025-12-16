@@ -17,6 +17,7 @@ public class PlantUmlService {
 
     private static final String MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
     private static final String GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=";
+    private static final String OPENAI_API_URL =  "https://api.openai.com/v1/chat/completions";
     private static final String GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     private static final String PROMPT_HEADER =
@@ -69,6 +70,10 @@ public class PlantUmlService {
 
     @Value("${mistral.api.key}")
     private String mistralApiKey;
+
+    @Value("${openai.api.key}")
+     private String openaiApiKey;
+
 
     @Value("${gemini.api.key}")
     private String geminiApiKey;
@@ -322,6 +327,72 @@ private String fixAndFilterPlantUml(String plantUml) {
         }
         return res.toString();
     }
+
+
+
+
+
+
+public String generateUmlWithChatGpt(String inputText) throws IOException {
+
+    JSONObject requestBody = new JSONObject();
+    requestBody.put("model", "gpt-4o-mini");
+    requestBody.put("temperature", 0.3);
+
+    JSONArray messages = new JSONArray();
+    messages.put(new JSONObject()
+            .put("role", "user")
+            .put("content", PROMPT_HEADER + inputText));
+    requestBody.put("messages", messages);
+
+    HttpURLConnection connection =
+            (HttpURLConnection) new URL(OPENAI_API_URL).openConnection();
+
+    connection.setRequestMethod("POST");
+    connection.setDoOutput(true);
+    connection.setRequestProperty(
+            "Authorization", "Bearer " + openaiApiKey);
+    connection.setRequestProperty(
+            "Content-Type", "application/json");
+
+    try (OutputStream os = connection.getOutputStream()) {
+        os.write(requestBody.toString()
+                .getBytes(StandardCharsets.UTF_8));
+    }
+
+    InputStream is;
+    try {
+        is = connection.getInputStream();
+    } catch (IOException e) {
+        is = connection.getErrorStream();
+    }
+
+    StringBuilder response = new StringBuilder();
+    try (BufferedReader br =
+                 new BufferedReader(new InputStreamReader(is))) {
+        String line;
+        while ((line = br.readLine()) != null) {
+            response.append(line.trim());
+        }
+    }
+
+    JSONObject jsonResponse =
+            new JSONObject(response.toString());
+
+    String fullContent = jsonResponse
+            .getJSONArray("choices")
+            .getJSONObject(0)
+            .getJSONObject("message")
+            .getString("content");
+
+    String umlBlock = extractUmlBlock(fullContent);
+    return fixAndFilterPlantUml(umlBlock);
+}
+
+
+
+
+
 }
 
 
